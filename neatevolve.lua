@@ -7,7 +7,7 @@
 -- TODO:
 -- Create rom/failure, rom/failure/died, rom/failure/timedOut, rom/wip folders
 
-CurrentRun = "smw2"
+CurrentRun = "smw3"
 
 if gameinfo.getromname() == "Super Mario World (USA)" then
 	StateFilename = CurrentRun
@@ -35,7 +35,7 @@ elseif gameinfo.getromname() == "Super Mario Bros." then
 	}
 end
 
-StateDirectory = CurrentRun;
+StateDirectory = CurrentRun
 
 BoxRadius = 6
 InputSize = (BoxRadius*2+1)*(BoxRadius*2+1)
@@ -71,8 +71,8 @@ function getPositions()
 		marioX = memory.read_s16_le(0x94)
 		marioY = memory.read_s16_le(0x96)
 
-		local layer1x = memory.read_s16_le(0x1A);
-		local layer1y = memory.read_s16_le(0x1C);
+		local layer1x = memory.read_s16_le(0x1A)
+		local layer1y = memory.read_s16_le(0x1C)
 
 		screenX = marioX-layer1x
 		screenY = marioY-layer1y
@@ -207,6 +207,10 @@ end
 
 function sigmoid(x)
 	return 2/(1+math.exp(-4.9*x))-1
+end
+
+function fitnessFunction()
+	return rightmost - initialRightMost
 end
 
 function newInnovation()
@@ -845,8 +849,9 @@ function clearJoypad()
 end
 
 function initializeRun()
-	loadState(randomState());
+	loadState(randomState())
 	rightmost = 0
+	initialRightMost = 0
 	pool.currentFrame = 0
 	timeout = TimeoutConstant
 	clearJoypad()
@@ -855,6 +860,7 @@ function initializeRun()
 	local genome = species.genomes[pool.currentGenome]
 	generateNetwork(genome)
 	evaluateCurrent()
+	initialRightMost = marioX
 end
 
 function evaluateCurrent()
@@ -1236,7 +1242,7 @@ playTopButton = forms.button(form, "Play Top", playTop, 5, 170)
 hideBanner = forms.checkbox(form, "Hide Banner", 5, 190)
 
 loadStatePool()
-loadState(randomState());
+loadState(randomState())
 
 while true do
 	local backgroundColor = 0xD0FFFFFF
@@ -1274,7 +1280,7 @@ while true do
 	local isDead = isDead()
 	local hasTimedOut = timeout + timeoutBonus <= 0
 	if isDead or hasTimedOut then
-		local fitness = rightmost - pool.currentFrame / 2
+		local fitness = fitnessFunction()
 		if gameinfo.getromname() == "Super Mario World (USA)" and rightmost > 4816 then
 			fitness = fitness + 1000
 		elseif gameinfo.getromname() == "Super Mario Bros." and rightmost > 3186 then
@@ -1313,12 +1319,12 @@ while true do
 		end
 	end
 	if not forms.ischecked(hideBanner) then
-		gui.drawText(0, 0, "Gen " .. pool.generation .. " species " .. pool.currentSpecies .. " genome " .. pool.currentGenome .. " (" .. math.floor(measured/total*100) .. "%)", 0xFF000000, 11)
-		gui.drawText(0, 12, "Fitness: " .. math.floor(rightmost - (pool.currentFrame) / 2 - (timeout + timeoutBonus)*2/3), 0xFF000000, 11)
-		gui.drawText(100, 12, "Max Fitness: " .. math.floor(pool.maxFitness), 0xFF000000, 11)
+		gui.drawText(0, 0, "Gen " .. pool.generation .. " species " .. pool.currentSpecies .. " genome " .. pool.currentGenome .. " (" .. math.floor(measured/total*100) .. "%)" .. " T: " .. timeout + timeoutBonus, 0xFF000000, 10, "Verdana")
+		gui.drawText(0, 12, "Fitness: " .. string.format("%06i", math.floor(fitnessFunction())), 0xFF000000, 10, "Verdana")
+		gui.drawText(100, 12, "Max Fitness: " .. string.format("%06i", math.floor(pool.maxFitness)), 0xFF000000, 10, "Verdana")
 	end
 
 	pool.currentFrame = pool.currentFrame + 1
 
-	emu.frameadvance();
+	emu.frameadvance()
 end
