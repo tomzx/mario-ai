@@ -1071,20 +1071,6 @@ function fileExists(name)
 	end
 end
 
-function loadStatePool()
-	for file in io.lines(StateDirectory .. "\\training-set.txt") do
-		table.insert(StatePool, file)
-	end
-end
-
-function writeStatePool()
-	local statePoolFile = io.open("Lua\\" .. StateDirectory .. "\\training-set.txt", "w")
-	for n, file in pairs(StatePool) do
-		statePoolFile:write(file .. "\n")
-	end
-	statePoolFile:close()
-end
-
 function randomState()
 	if #StatePool == 0 then
 		console.writeline("No state found. Please specify at least one training state.")
@@ -1093,12 +1079,22 @@ function randomState()
 	return StatePool[math.random(#StatePool)]
 end
 
-function writePoolFile(filename)
-	writePoolFileRaw(StateDirectory .. "\\pool\\" .. filename)
+function loadStatePool()
+	for file in io.lines(StateDirectory .. "\\training-set.txt") do
+		table.insert(StatePool, file)
+	end
 end
 
-function writePoolFileRaw(filename)
-	local file = io.open(filename, "w")
+function writeStatePool()
+	local statePoolFile = io.open(StateDirectory .. "\\training-set.txt", "w")
+	for n, file in pairs(StatePool) do
+		statePoolFile:write(file .. "\n")
+	end
+	statePoolFile:close()
+end
+
+function writePoolFile(filename)
+	local file = io.open(StateDirectory .. "\\pool\\" .. filename, "w")
 	file:write(pool.generation .. "\n")
 	file:write(pool.maxFitness .. "\n")
 	file:write(#pool.species .. "\n")
@@ -1134,21 +1130,18 @@ end
 
 function savePool()
 	local filename = forms.gettext(saveLoadFile)
-	writePoolFileRaw("Lua\\" .. StateDirectory .. "\\pool\\" .. filename)
+	writePoolFile(filename)
+	writeStatePool()
 end
 
 function loadFile(filename)
-	loadFileRaw(StateDirectory .. "\\pool\\" ..filename)
-end
-
-function loadFileRaw(filename)
-	local file = io.open(filename, "r")
+	local file = io.open(StateDirectory .. "\\pool\\" ..filename, "r")
 	pool = newPool()
 	pool.generation = file:read("*number")
 	pool.maxFitness = file:read("*number")
 	forms.settext(maxFitnessLabel, "Max Fitness: " .. math.floor(pool.maxFitness))
-		local numSpecies = file:read("*number")
-		for s=1,numSpecies do
+	local numSpecies = file:read("*number")
+	for s=1,numSpecies do
 		local species = newSpecies()
 		table.insert(pool.species, species)
 		species.topFitness = file:read("*number")
@@ -1179,7 +1172,7 @@ function loadFileRaw(filename)
 			end
 		end
 	end
-		file:close()
+	file:close()
 
 	while fitnessAlreadyMeasured() do
 		nextGenome()
@@ -1190,7 +1183,8 @@ end
 
 function loadPool()
 	local filename = forms.gettext(saveLoadFile)
-	loadFileRaw("Lua\\" .. StateDirectory .. "\\pool\\" .. filename)
+	loadFile(filename)
+	loadStatePool()
 end
 
 function playTop()
