@@ -65,6 +65,8 @@ TimeoutConstant = 20
 MaxNodes = 1000000
 
 StatePool = {}
+clock = os.clock()
+frameCount = emu.framecount()
 
 function getPositions()
 	if gameinfo.getromname() == "Super Mario World (USA)" then
@@ -861,6 +863,8 @@ function initializeRun()
 	generateNetwork(genome)
 	evaluateCurrent()
 	initialRightMost = marioX
+	clock = os.clock()
+	frameCount = emu.framecount()
 end
 
 function evaluateCurrent()
@@ -1187,6 +1191,13 @@ function loadPool()
 	loadStatePool()
 end
 
+function logToCsv(pool, fitness)
+	local filename = StateDirectory .. "\\" .. StateFilename .. ".csv"
+	local file = io.open(filename, "a")
+	file:write(pool.generation .. "," .. pool.currentSpecies .. "," .. pool.currentGenome .. "," .. fitness .. "," .. (os.clock() - clock) .. "," .. (emu.framecount() - frameCount) .. "\n")
+	file:close()
+end
+
 function playTop()
 	local maxfitness = 0
 	local maxs, maxg
@@ -1291,6 +1302,7 @@ while true do
 			writePoolFile("backup." .. pool.generation .. "." .. forms.gettext(saveLoadFile))
 		end
 
+		logToCsv(pool, fitness)
 		console.writeline("Gen " .. pool.generation .. " species " .. pool.currentSpecies .. " genome " .. pool.currentGenome .. " fitness: " .. fitness)
 		pool.currentSpecies = 1
 		pool.currentGenome = 1
